@@ -16,7 +16,6 @@ public class Product {
     private String description;
     private double price;
 
-    // Getters and Setters
 
     public Long getId() {
         return id;
