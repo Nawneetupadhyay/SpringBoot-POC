@@ -1,7 +1,7 @@
 package com.example.simpleWebApp;
 
 import com.example.simpleWebApp.model.Product;
-import com.example.simpleWebApp.model.repository.ProductRepository;
+import com.example.simpleWebApp.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;

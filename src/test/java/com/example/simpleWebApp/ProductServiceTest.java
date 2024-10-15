@@ -1,7 +1,9 @@
 package com.example.simpleWebApp;
 
+import com.example.simpleWebApp.model.GenericResponse;
+import com.example.simpleWebApp.enums.ErrorCode;
 import com.example.simpleWebApp.model.Product;
-import com.example.simpleWebApp.model.repository.ProductRepository;
+import com.example.simpleWebApp.repository.ProductRepository;
 import com.example.simpleWebApp.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,7 @@ public class ProductServiceTest {
 
     @BeforeEach
     public void setUp() {
-        MockitoAnnotations.openMocks(this); // Initializes mocks
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -39,10 +41,11 @@ public class ProductServiceTest {
 
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
-        Product createdProduct = productService.createProduct(product);
+        GenericResponse<Product> response = productService.createProduct(product);
 
-        assertNotNull(createdProduct);
-        assertEquals("Test Product", createdProduct.getName());
+        assertNotNull(response.getData());
+        assertEquals("Test Product", response.getData().getName());
+        assertNull(response.getErrorMessage());
         verify(productRepository, times(1)).save(product);
     }
 
@@ -59,10 +62,12 @@ public class ProductServiceTest {
         List<Product> productList = Arrays.asList(product1, product2);
         when(productRepository.findAll()).thenReturn(productList);
 
-        List<Product> products = productService.getAllProducts();
+        GenericResponse<List<Product>> response = productService.getAllProducts();
 
-        assertEquals(2, products.size());
-        assertEquals("Product 1", products.get(0).getName());
+        assertNotNull(response.getData());
+        assertEquals(2, response.getData().size());
+        assertEquals("Product 1", response.getData().get(0).getName());
+        assertNull(response.getErrorMessage());
         verify(productRepository, times(1)).findAll();
     }
 
@@ -74,10 +79,23 @@ public class ProductServiceTest {
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
-        Optional<Product> foundProduct = productService.getProductById(1L);
+        GenericResponse<Product> response = productService.getProductById(1L);
 
-        assertTrue(foundProduct.isPresent());
-        assertEquals("Test Product", foundProduct.get().getName());
+        assertNotNull(response.getData());
+        assertEquals("Test Product", response.getData().getName());
+        assertNull(response.getErrorMessage());
+        verify(productRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    public void testGetProductByIdNotFound() {
+        when(productRepository.findById(1L)).thenReturn(Optional.empty());
+
+        GenericResponse<Product> response = productService.getProductById(1L);
+
+        assertNull(response.getData());
+        assertNotNull(response.getErrorMessage());
+        assertEquals(ErrorCode.PRODUCT_NOT_FOUND, response.getErrorCode());
         verify(productRepository, times(1)).findById(1L);
     }
 
@@ -95,11 +113,12 @@ public class ProductServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(existingProduct));
         when(productRepository.save(any(Product.class))).thenReturn(existingProduct);
 
-        Product updatedProduct = productService.updateProduct(1L, updatedProductDetails);
+        GenericResponse<Product> response = productService.updateProduct(1L, updatedProductDetails);
 
-        assertNotNull(updatedProduct);
-        assertEquals("Updated Product", updatedProduct.getName());
-        assertEquals(200.0, updatedProduct.getPrice());
+        assertNotNull(response.getData());
+        assertEquals("Updated Product", response.getData().getName());
+        assertEquals(200.0, response.getData().getPrice());
+        assertNull(response.getErrorMessage());
         verify(productRepository, times(1)).findById(1L);
         verify(productRepository, times(1)).save(existingProduct);
     }
@@ -112,21 +131,22 @@ public class ProductServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         doNothing().when(productRepository).delete(product);
 
-        productService.deleteProduct(1L);
+        GenericResponse<Void> response = productService.deleteProduct(1L);
 
+        assertNull(response.getErrorMessage());
+        assertNull(response.getErrorCode());
         verify(productRepository, times(1)).findById(1L);
         verify(productRepository, times(1)).delete(product);
     }
 
     @Test
-    public void testGetProductByIdNotFound() {
+    public void testDeleteProductNotFound() {
         when(productRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            productService.getProductById(1L).orElseThrow(() -> new RuntimeException("Product not found"));
-        });
+        GenericResponse<Void> response = productService.deleteProduct(1L);
 
-        assertEquals("Product not found", exception.getMessage());
+        assertNotNull(response.getErrorMessage());
+        assertEquals(ErrorCode.PRODUCT_NOT_FOUND, response.getErrorCode());
         verify(productRepository, times(1)).findById(1L);
     }
 }

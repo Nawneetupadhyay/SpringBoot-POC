@@ -1,6 +1,6 @@
 package com.example.simpleWebApp.controller;
 
-
+import com.example.simpleWebApp.model.GenericResponse;
 import com.example.simpleWebApp.model.Product;
 import com.example.simpleWebApp.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,34 +18,45 @@ public class ProductController {
 
     // Create Product
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        return ResponseEntity.ok(productService.createProduct(product));
+    public ResponseEntity<GenericResponse<Product>> createProduct(@RequestBody Product product) {
+        GenericResponse<Product> response = productService.createProduct(product);
+        return buildResponse(response);
     }
 
     // Get All Products
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<GenericResponse<List<Product>>> getAllProducts() {
+        GenericResponse<List<Product>> response = productService.getAllProducts();
+        return buildResponse(response);
     }
 
     // Get Product by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        return productService.getProductById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<GenericResponse<Product>> getProductById(@PathVariable Long id) {
+        GenericResponse<Product> response = productService.getProductById(id);
+        return buildResponse(response);
     }
 
     // Update Product
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
-        return ResponseEntity.ok(productService.updateProduct(id, productDetails));
+    public ResponseEntity<GenericResponse<Product>> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
+        GenericResponse<Product> response = productService.updateProduct(id, productDetails);
+        return buildResponse(response);
     }
 
     // Delete Product
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<GenericResponse<Void>> deleteProduct(@PathVariable Long id) {
+        GenericResponse<Void> response = productService.deleteProduct(id);
+        return buildResponse(response);
+    }
+
+    // Utility method to build the response based on ApiResponse
+    private <T> ResponseEntity<GenericResponse<T>> buildResponse(GenericResponse<T> response) {
+        if (response.getErrorMessage() == null) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(response.getErrorCode().getHttpStatus()).body(response);
+        }
     }
 }
